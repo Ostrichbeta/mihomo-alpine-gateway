@@ -1,0 +1,126 @@
+name: Build and Push Images
+
+on:
+  push:
+    branches: [main, master]
+    paths-ignore:
+      - "README.md"
+      - "docker-compose.yml"
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            variant: v1
+            tag_suffix: amd64-v1
+          - platform: linux/amd64
+            variant: v2
+            tag_suffix: amd64-v2
+          - platform: linux/amd64
+            variant: v3
+            tag_suffix: amd64-v3
+          - platform: linux/arm64
+            variant: ""
+            tag_suffix: arm64
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve mihomo version
+        id: version
+        run: |
+          VERSION=$(curl -sI https://github.com/MetaCubeX/mihomo/releases/latest \
+            | grep -i '^location:' \
+            | sed 's#.*/tag/##' \
+            | tr -d '\r\n')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "version_num=${VERSION#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: ${{ matrix.platform }}
+          build-args: |
+            MIHOMO_VARIANT=${{ matrix.variant }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag_suffix }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag_suffix }}-${{ steps.version.outputs.version_num }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+
+  manifest:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve mihomo version
+        id: version
+        run: |
+          VERSION=$(curl -sI https://github.com/MetaCubeX/mihomo/releases/latest \
+            | grep -i '^location:' \
+            | sed 's#.*/tag/##' \
+            | tr -d '\r\n')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "version_num=${VERSION#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Create and push multi-arch manifests
+        run: |
+          REGISTRY_REPO="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+          VERSION_NUM="${{ steps.version.outputs.version_num }}"
+
+          # latest: amd64-v3 (best default) + arm64
+          docker buildx imagetools create \
+            -t "${REGISTRY_REPO}:latest" \
+            "${REGISTRY_REPO}:amd64-v3" \
+            "${REGISTRY_REPO}:arm64"
+
+          # version-pinned: same combo
+          docker buildx imagetools create \
+            -t "${REGISTRY_REPO}:${VERSION_NUM}" \
+            "${REGISTRY_REPO}:amd64-v3-${VERSION_NUM}" \
+            "${REGISTRY_REPO}:arm64-${VERSION_NUM}"

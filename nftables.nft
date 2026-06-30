@@ -1,0 +1,15 @@
+flush ruleset
+
+table ip nat {
+    chain postrouting {
+        type nat hook postrouting priority srcnat; policy accept;
+
+        ip daddr {
+            10.0.0.0/8,
+            172.16.0.0/12,
+            192.168.0.0/16
+        } accept comment "Do not NAT private destinations"
+
+        oifname "eth0" masquerade comment "Masquerade outbound"
+    }
+}

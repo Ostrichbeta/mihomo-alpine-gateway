@@ -1,0 +1,15 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Docker
+docker-compose.yaml
+docker-compose.yml
+
+# Editor
+*.swp
+*.swo
+*~
+.idea/
+.vscode/

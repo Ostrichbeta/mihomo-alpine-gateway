@@ -1,0 +1,9 @@
+#!/sbin/openrc-run
+
+description="dnsmasq DNS fallback"
+
+name="dnsmasq"
+command="/usr/sbin/dnsmasq"
+command_args="--conf-file=/etc/dnsmasq.conf --keep-in-foreground"
+command_background=true
+pidfile="/run/${RC_SVCNAME}.pid"

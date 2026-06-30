@@ -1,0 +1,68 @@
+# Example 1: Create a new macvlan network
+# -----------------------------------------------------------------------------
+# Use this if you don't have a macvlan network yet.
+# Change parent to your host's physical interface (e.g. eth0, enp2s0).
+
+services:
+  mihomo:
+    image: ghcr.io/<owner>/mihomo-gateway:latest
+    container_name: mihomo-gateway
+    restart: unless-stopped
+    privileged: true
+    # If privileged is too broad, use the tighter permissions below instead:
+    # cap_add:
+    #   - NET_ADMIN
+    #   - NET_RAW
+    # devices:
+    #   - /dev/net/tun:/dev/net/tun
+    sysctls:
+      net.ipv4.ip_forward: "1"
+    volumes:
+      - ./config.yaml:/etc/mihomo/config.yaml
+    environment:
+      MIHOMO_DNS: 127.0.0.1#1053
+      FALLBACK_DNS_1: 8.8.8.8
+      FALLBACK_DNS_2: 1.1.1.1
+    networks:
+      lan:
+        ipv4_address: 192.168.12.200
+
+networks:
+  lan:
+    driver: macvlan
+    driver_opts:
+      parent: eth0
+    ipam:
+      config:
+        - subnet: 192.168.12.0/23
+          gateway: 192.168.12.254
+
+---
+
+# Example 2: Use an existing macvlan network
+# -----------------------------------------------------------------------------
+# Use this if you already created a macvlan network, e.g.:
+#   docker network create -d macvlan --subnet=192.168.9.0/24 \
+#     --gateway=192.168.9.1 -o parent=enp2s0 openwrt_macvlan
+
+services:
+  mihomo:
+    image: ghcr.io/<owner>/mihomo-gateway:latest
+    container_name: mihomo-gateway
+    restart: unless-stopped
+    privileged: true
+    sysctls:
+      net.ipv4.ip_forward: "1"
+    volumes:
+      - ./config.yaml:/etc/mihomo/config.yaml
+    environment:
+      MIHOMO_DNS: 127.0.0.1#1053
+      FALLBACK_DNS_1: 8.8.8.8
+      FALLBACK_DNS_2: 1.1.1.1
+    networks:
+      openwrt_macvlan:
+        ipv4_address: 192.168.9.251
+
+networks:
+  openwrt_macvlan:
+    external: true
