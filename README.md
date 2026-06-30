@@ -88,7 +88,6 @@ Pushes to `main` trigger CI (`.github/workflows/build.yml`) → GHCR.
 ```
 ├── Dockerfile              # Multi-stage: fetch binary + geo DBs, runtime
 ├── entrypoint.sh           # TUN check, generate dnsmasq.conf, start services
-├── config-dummy.yaml       # Reference config template (not baked into image)
 ├── nftables.nft            # NAT masquerade rules
 ├── mihomo.initd            # OpenRC service (supervised, auto-restart)
 ├── dnsmasq.initd           # OpenRC service (always-on)
