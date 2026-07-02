@@ -10,4 +10,4 @@ pidfile="/run/${RC_SVCNAME}.pid"
 output_log="/var/log/mihomo/mihomo.log"
 error_log="/var/log/mihomo/mihomo.log"
 
-supervise_daemon_args="--respawn-delay 5"
+supervise_daemon_args="--respawn-delay 5 --respawn-max 0"
