@@ -1,6 +1,4 @@
-# Example 1: Create a new macvlan network
-# -----------------------------------------------------------------------------
-# Use this if you don't have a macvlan network yet.
+# Default: create a new macvlan network.
 # Change parent to your host's physical interface (e.g. eth0, enp2s0).
 
 services:
@@ -9,7 +7,9 @@ services:
     container_name: mihomo-gateway
     restart: unless-stopped
     privileged: true
-    # If privileged is too broad, use the tighter permissions below instead:
+    # Unprivileged alternative, still with macvlan:
+    # remove "privileged: true" above and use all of these instead.
+    # macvlan provides the LAN IP; these grant TUN/routing/nftables permissions.
     # cap_add:
     #   - NET_ADMIN
     #   - NET_RAW
@@ -23,12 +23,17 @@ services:
       MIHOMO_DNS: 127.0.0.1#1053
       FALLBACK_DNS_1: 8.8.8.8
       FALLBACK_DNS_2: 1.1.1.1
+      WEBUI_ADMIN_PASSWORD: change-me
+      WEBUI_PORT: 8080
+      # MIHOMO_API_SECRET is generated at boot if omitted.
+      # Set this only if you need a stable mihomo controller secret.
+      # MIHOMO_API_SECRET: change-me-too
     networks:
-      lan:
+      macvlan:
         ipv4_address: 192.168.12.200
 
 networks:
-  lan:
+  macvlan:
     driver: macvlan
     driver_opts:
       parent: eth0
@@ -37,32 +42,12 @@ networks:
         - subnet: 192.168.12.0/23
           gateway: 192.168.12.254
 
----
-
-# Example 2: Use an existing macvlan network
-# -----------------------------------------------------------------------------
-# Use this if you already created a macvlan network, e.g.:
-#   docker network create -d macvlan --subnet=192.168.9.0/24 \
-#     --gateway=192.168.9.1 -o parent=enp2s0 openwrt_macvlan
-
-services:
-  mihomo:
-    image: ghcr.io/<owner>/mihomo-gateway:latest
-    container_name: mihomo-gateway
-    restart: unless-stopped
-    privileged: true
-    sysctls:
-      net.ipv4.ip_forward: "1"
-    volumes:
-      - ./config.yaml:/etc/mihomo/config.yaml
-    environment:
-      MIHOMO_DNS: 127.0.0.1#1053
-      FALLBACK_DNS_1: 8.8.8.8
-      FALLBACK_DNS_2: 1.1.1.1
-    networks:
-      openwrt_macvlan:
-        ipv4_address: 192.168.9.251
-
-networks:
-  openwrt_macvlan:
-    external: true
+    # Existing macvlan alternative:
+    # If you already created a Docker network named "macvlan", replace this
+    # whole macvlan definition with:
+    #
+    # external: true
+    #
+    # Example:
+    # docker network create -d macvlan --subnet=192.168.12.0/23 \
+    #   --gateway=192.168.12.254 -o parent=eth0 macvlan

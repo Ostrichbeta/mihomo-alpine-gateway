@@ -1,0 +1,12 @@
+#!/sbin/openrc-run
+
+description="mihomo gateway web UI"
+
+[ -f /etc/conf.d/webui ] && . /etc/conf.d/webui
+
+name="webui"
+command="/usr/local/bin/mihomo-webui"
+command_background=true
+pidfile="/run/${RC_SVCNAME}.pid"
+output_log="/var/log/webui/webui.log"
+error_log="/var/log/webui/webui.log"

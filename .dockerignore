@@ -6,3 +6,6 @@ README.md
 docker-compose*.yaml
 docker-compose*.yml
 *.md
+.DS_Store
+webui/node_modules
+webui/dist

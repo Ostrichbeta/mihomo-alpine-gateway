@@ -13,3 +13,7 @@ docker-compose.yml
 *~
 .idea/
 .vscode/
+
+# Dependencies
+webui/node_modules/
+webui/dist/

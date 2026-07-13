@@ -2,9 +2,11 @@
 
 description="mihomo proxy gateway"
 
+[ -f /etc/conf.d/mihomo ] && . /etc/conf.d/mihomo
+
 name="mihomo"
 command="/usr/local/bin/mihomo"
-command_args="-d /etc/mihomo"
+command_args="-d /etc/mihomo -ext-ui /usr/share/metacubexd -ext-ctl ${MIHOMO_EXTERNAL_CONTROLLER:-0.0.0.0:9090} -secret ${MIHOMO_API_SECRET}"
 command_background=true
 pidfile="/run/${RC_SVCNAME}.pid"
 output_log="/var/log/mihomo/mihomo.log"
