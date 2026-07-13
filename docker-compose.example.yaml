@@ -3,7 +3,7 @@
 
 services:
   mihomo:
-    image: ghcr.io/<owner>/mihomo-gateway:latest
+    image: ghcr.io/ostrichbeta/mihomo-alpine-gateway:latest
     container_name: mihomo-gateway
     restart: unless-stopped
     privileged: true
